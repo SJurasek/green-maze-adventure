@@ -30,11 +30,15 @@ public class MazeGraphic extends JPanel {
 		
 		for (int i=0;i<TheMain.GRID;i++) {
 			for (int j=0;j<TheMain.GRID;j++) {
-				if (TheMain.board[i][j] == 0) {
+				if (TheMain.board[i][j] == TheMain.SOLID) {
 					
 					g2.setColor(new Color(65,164,65));
 					g2.fillRect(blockX*i,blockY*j, blockX, blockY);
-					
+					/* when drawing images use 
+					boolean Graphics.drawImage(Image img,
+       						int dstx1, int dsty1, int dstx2, int dsty2,
+       						int srcx1, int srcy1, int srcx2, int srcy2,
+       						ImageObserver observer);*/
 				}
 			}
 		}
