@@ -3,11 +3,7 @@ import javax.swing.*;
 
 public class TheMain {
 	public static void main(String[]args){
-		try {
 		new TheMain();
-		} catch (StackOverflowError e){
-			
-		}
 	}
 	
 	public final static int GRID = 50; // GRID must be large
@@ -78,134 +74,114 @@ public class TheMain {
 		board[startx][starty] = START;
 	}
 	// solution path makes a path of EMPTY squares to be used as the solution pathway.
-	//TODO adjust for ArrayIndexOutOfBoundsException in corners
 	// Square coords passed to solutionPath should be in the EMPTY/PATH value
+	//TODO optimize code so that it doesnt take up so much space with so many lines of code.
+	
 	void solutionPath(int x, int y) {
-		board[startx][starty] = EMPTY;
-		
 		int square = 0;
 		
 		boolean isValidSquare = false; // used to check if the square is proper for a solution pathway
 		
 		boolean isIndefinite = false; // used to check to see if the growth of the path has stopped
 		
+		boolean isFinished = false; // used to tell whether or not the path has reached the end square.
+		
 		// destination square for temporarily investigating the address of a square
 		// a changed value of dx and dy must be done in order for the path to continue
 		int dx = x;
 		int dy = y;
 		
-		boolean[] usedSquares = {false, false, false, false}; // array of every possible square option used
+		int cx,cy; // used to adjust specific change needed for a corner square
+		// need one value for both x and y - values will either be 1 or -1
 		
-		if(x == 0 && y == 0){
+		// x will either be 0 or GRID-1
+		if(x == 0){
+			cx = 1;
+		}else if(x == GRID-1){
+			cx = -1;
+		}else{
+			cx = 0;
+		}
+		// y will either be 0 or GRID-1
+		if(y == 0){
+			cy = 1;
+		}else if(y == GRID-1){
+			cy = -1;
+		}else{
+			cy = 0;
+		}
+		
+		boolean[] usedSquares = {false, false, false, false}; // array of every possible square option used
+		// Corner cases
+		if( (x == 0 || x == GRID-1) && (y == 0 || y == GRID-1) ){
 			// Corners are a more special case than side squares, since there are only two neighbouring squares.
-			// May need to comment here
-			if(board[x+1][y] == EMPTY){
+			
+			// I based this if statement off of previous code without cx,cy.
+			if(board[x+cx][y] == EMPTY){
 				dx = x;
-				dy = y+1;
-				if(board[x+1][y+1] == EMPTY && board[x+2][y] == EMPTY){
+				dy = y+cy;
+				if(board[x+cx][y+cy] == EMPTY && board[x+(2*cx)][y] == EMPTY){
 					isIndefinite = true;
 				}
-			} else if(board[x][y+1] == EMPTY){
-				dx = x+1;
+			} else if(board[x][y+cy] == EMPTY){
+				dx = x+cx;
 				dy = y;
-				if(board[x+1][y+1] == EMPTY && board[x][y+2] == EMPTY){
+				if(board[x+cx][y+cy] == EMPTY && board[x][y+(2*cy)] == EMPTY){
 					isIndefinite = true;
 				}
 			}
-			board[dx][dy] = EMPTY;
-			if(board[x+2][y] == END || board[x][y+2] == END) return;
-		}else if(x == 0 && y == GRID-1){
-			if(board[x+1][y] == EMPTY){
-				dx = x;
-				dy = y-1;
-				if(board[x+1][y-1] == EMPTY && board[x+2][y] == EMPTY){
-					isIndefinite = true;
-				}
-			} else if(board[x][y-1] == EMPTY){
-				dx = x+1;
-				dy = y;
-				if(board[x+1][y-1] == EMPTY && board[x][y-2] == EMPTY){
-					isIndefinite = true;
-				}
-			}
-			board[dx][dy] = EMPTY;
-			if(board[x+2][y] == END || board[x][y-2] == END) return;
-		}else if(x == GRID-1 && y == 0){
-			if(board[x-1][y] == EMPTY){
-				dx = x;
-				dy = y+1;
-				if(board[x-1][y+1] == EMPTY && board[x-2][y] == EMPTY){
-					isIndefinite = true;
-				}
-			} else if(board[x][y+1] == EMPTY){
-				dx = x-1;
-				dy = y;
-				if(board[x-1][y+1] == EMPTY && board[x][y+2] == EMPTY){
-					isIndefinite = true;
-				}
-			}
-			board[dx][dy] = EMPTY;
-			if(board[x-2][y] == END || board[x][y+2] == END) return;
-		}else if(x == GRID-1 && y == GRID-1){
-			if(board[x-1][y] == EMPTY){
-				dx = x;
-				dy = y-1;
-				if(board[x-1][y-1] == EMPTY && board[x-2][y] == EMPTY){
-					isIndefinite = true;
-				}
-			} else if(board[x][y-1] == EMPTY){
-				dx = x-1;
-				dy = y;
-				if(board[x-1][y-1] == EMPTY && board[x][y-2] == EMPTY){
-					isIndefinite = true;
-				}
-			}
-			board[dx][dy] = EMPTY;
-			if(board[x-2][y] == END || board[x][y-2] == END) return;
+			if(board[x+(2*cx)][y] == END || board[x][y+(2*cy)] == END) isFinished = true;
 		}else if(x == 0){ // sides start
 			while(!isValidSquare && !isIndefinite){
 				square = (int)(Math.random()*3);
 				if(square == 0){
 					usedSquares[square] = true;
-					if(board[x+1][y] == EMPTY){
+					if(board[x+cx][y+cy] == EMPTY){
 						continue;
 					} else {
-						dy = y;
-						dx = x+1;
+						dy = y+cy;
+						dx = x+cx;
 					}
 				} else if(square == 1){
 					usedSquares[square] = true;
 					if(board[x][y+1] == EMPTY){
 						continue;
 					} else {
-						dy = y+1;
-						dx = x;
+						if(cx != 0){ // sides can only have one cx or cy value not equal to 0
+							dy = y+1; // therefore check to make sure that the appropriate one is used for this case
+							dx = x;
+						}else if(cy !=0){
+							dy = y;
+							dx = x+1;
+						}
 					}
 				} else if(square == 2){
 					usedSquares[square] = true;
 					if(board[x][y-1] == EMPTY){
 						continue;
 					} else {
-						dy = y-1;
-						dx = x;
+						if(cx != 0){
+							dy = y-1;
+							dx = x;
+						}else if(cy !=0){
+							dy = y;
+							dx = x-1;
+						}
 					}
 				}
 				if(dy == 0){
 					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
 							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else if(dy == GRID-1){
 					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
-				}else{
+				}else{ //TODO start optimizing from here
 					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}
@@ -215,11 +191,11 @@ public class TheMain {
 				}
 			}
 			if(dy == 0){
-				if(board[x+1][dy] == END || board[dx][dy+1] == END) return;
+				if(board[x+1][dy] == END || board[dx][dy+1] == END) isFinished = true;
 			}else if(dy == GRID-1){
-				if(board[x+1][dy] == END || board[dx][dy-1] == END) return;
+				if(board[x+1][dy] == END || board[dx][dy-1] == END) isFinished = true;
 			} else {
-				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)return;
+				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
 			}
 		} else if(x == GRID-1){
 			while(!isValidSquare && !isIndefinite){
@@ -252,19 +228,16 @@ public class TheMain {
 				if(dy == 0){
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
 							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else if(dy == GRID-1){
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else{
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}	
@@ -274,11 +247,11 @@ public class TheMain {
 				}
 			}
 			if(dy == 0){
-				if(board[x-1][dy] == END || board[dx][dy+1] == END) return;
+				if(board[x-1][dy] == END || board[dx][dy+1] == END) isFinished = true;
 			}else if(dy == GRID-1){
-				if(board[x-1][dy] == END || board[dx][dy-1] == END) return;
+				if(board[x-1][dy] == END || board[dx][dy-1] == END) isFinished = true;
 			} else {
-				if(board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)return;
+				if(board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
 			}
 		} else if (y == 0){
 			while(!isValidSquare && !isIndefinite){
@@ -311,19 +284,16 @@ public class TheMain {
 				if(dx == 0){
 					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
 							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else if(dx == GRID-1){
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
 							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else{
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 							|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}	
@@ -333,11 +303,11 @@ public class TheMain {
 				}
 			}
 			if(dx == 0){
-				if(board[x+1][dy] == END || board[dx][dy+1] == END) return;
+				if(board[x+1][dy] == END || board[dx][dy+1] == END) isFinished = true;
 			}else if(dx == GRID-1){
-				if(board[x-1][dy] == END || board[dx][dy+1] == END) return;
+				if(board[x-1][dy] == END || board[dx][dy+1] == END) isFinished = true;
 			} else {
-				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx-1][dy] == END)return;
+				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx-1][dy] == END)isFinished = true;
 			}
 		} else if (y == GRID-1){
 			while(!isValidSquare && !isIndefinite){
@@ -370,19 +340,16 @@ public class TheMain {
 				if(dx == 0){
 					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else if(dx == GRID-1){
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
 							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}else{
 					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy-1] == EMPTY && dy-1 != y)
 							|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-						board[dx][dy] = EMPTY; // set to empty when valid
 						isValidSquare = true;
 					}
 				}	
@@ -392,11 +359,11 @@ public class TheMain {
 				}
 			}
 			if(dx == 0){
-				if(board[x+1][dy] == END || board[dx][dy-1] == END) return;
+				if(board[x+1][dy] == END || board[dx][dy-1] == END) isFinished = true;
 			}else if(dx == GRID-1){
-				if(board[x-1][dy] == END || board[dx][dy-1] == END) return;
+				if(board[x-1][dy] == END || board[dx][dy-1] == END) isFinished = true;
 			} else {
-				if(board[dx+1][dy] == END || board[dx][dy-1] == END || board[dx-1][dy] == END)return;
+				if(board[dx+1][dy] == END || board[dx][dy-1] == END || board[dx-1][dy] == END)isFinished = true;
 			}
 		} else {
 			// loop a bunch until all conditions are met for a valid square (Not touching solution square and not a previous square)
@@ -445,32 +412,27 @@ public class TheMain {
 			if(dx == 0){
 				if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 						|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-					board[dx][dy] = EMPTY; // set to empty when valid
 					isValidSquare = true;
 				}
 			}else if(dx == GRID-1){
 				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 						|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-					board[dx][dy] = EMPTY; // set to empty when valid
 					isValidSquare = true;
 				}
 			}else if(dy == 0){
 				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
 						|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-					board[dx][dy] = EMPTY; // set to empty when valid
 					isValidSquare = true;
 				}
 			}else if(dy == GRID-1){
 				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy-1] == EMPTY && dy-1 != y)
 						|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-					board[dx][dy] = EMPTY; // set to empty when valid
 					isValidSquare = true;
 				}
 			} else {
 				if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx-1][dy] == EMPTY && dx-1 != x) 
 						|| (board[dx][dy+1] == EMPTY && dy+1 != y)|| (board[dx][dy-1] == EMPTY && dy-1 != y)
 						) ){
-					board[dx][dy] = EMPTY; // set to empty when valid
 					isValidSquare = true;
 				}
 			}
@@ -484,31 +446,26 @@ public class TheMain {
 			// checks to see if the path has reach the end, else it goes through the method to produce another
 			// valid square. Unless it isIndefinite, then it restarts maze generation
 			if(dx == 0){
-				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END){
-					return;
-				}
+				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
 			}else if(dx == GRID-1){
-				if(board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END){
-					return;
-				}
+				if(board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
 			}else if(dy == 0){
-				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy+1] == END){
-					return;
-				}
+				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy+1] == END)isFinished = true;
 			}else if(dy == GRID-1){
-				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy-1] == END){
-					return;
-				}
+				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy-1] == END)isFinished = true;
 			} else {
-				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END){
-					return;
-				}
+				if(board[dx+1][dy] == END || board[dx-1][dy] == END 
+					|| board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
 			}
 		}
 		// TODO optimize code so that I can adjust board values down here, and also less code
-		board[startx][starty] = START;
+		if(isValidSquare){	
+			board[dx][dy] = PATH;
+		}
 		
-		if (isIndefinite){
+		if(isFinished){
+			//dostuff
+		}else if (isIndefinite){
 			setupGame();
 		} else {
 			solutionPath(dx, dy);
