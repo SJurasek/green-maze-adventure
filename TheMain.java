@@ -7,7 +7,9 @@ public class TheMain {
 	}
 	
 	public final static int GRID = 50; // GRID must be large
-	public final static int PIXPERSQ = 12; // dimension of PIXPERSQxPIXPERSQ of each box
+	public final static int PIXPERSQ = 5; // dimension of PIXPERSQxPIXPERSQ of each box
+	public final static int PATHSIZE = GRID*2;
+	
 	public final static int EMPTY = 0;
 	public final static int SOLID = 1;
 	public final static int START = 2;
@@ -42,7 +44,7 @@ public class TheMain {
 		}
 	}
 	
-	void mazeAlgorithm(){
+	void generateStartAndEndPoint(){
 		// sets starting square to a random square on the board
 		startx = (int)(Math.random()*GRID);
 		starty = (int)(Math.random()*GRID);
@@ -53,7 +55,7 @@ public class TheMain {
 		}
 		// set start point to empty because it conflicts with how path is made.
 		// set to START after solutionPath() completes
-		board[startx][starty] = START;
+		board[startx][starty] = PATH;
 		
 		//determines which border the exit will be on.
 		int rdmSide = (int)(Math.random()*4);
@@ -68,16 +70,55 @@ public class TheMain {
 		} else if(rdmSide == 3){
 			board[GRID-1][(int)(Math.random()*GRID)] = END;
 		}
+	}
+	
+	void mazeAlgorithm(){
+		generateStartAndEndPoint();
 		
-		solutionPath(startx, starty); // make a path starting from the start point
+		int m = startx;
+		int n = starty;
+		int[] myArray = new int[3];
+		
+		while(true){
+			myArray = solutionPath(m, n);
+			if(myArray[2] == 1){
+				int numOfPathTiles = 0;
+				for(int i=0; i<GRID; i++){
+					for(int j=0; j<GRID; j++){
+						if(board[i][j] == PATH) numOfPathTiles++;
+					}
+				}
+				if(numOfPathTiles > PATHSIZE){
+					break;
+				} else {
+					resetBoard();
+					generateStartAndEndPoint();
+					
+					m = startx;
+					n = starty;
+				}
+			} else if(myArray[2] == -1){
+				resetBoard();
+				generateStartAndEndPoint();
+				
+				m = startx;
+				n = starty;
+				
+			} else if(myArray[2] == 0){
+				m = myArray[0];
+				n = myArray[1];
+			} // make a path starting from the start point
+		}
 		
 		board[startx][starty] = START;
 	}
 	// solution path makes a path of EMPTY squares to be used as the solution pathway.
 	// Square coords passed to solutionPath should be in the EMPTY/PATH value
 	//TODO optimize code so that it doesnt take up so much space with so many lines of code.
+	//TODO remake algorithm in order to remove math.random from while loops and prevent stack overflow
+	//TODO or make it so that solutionPath does not recur in itself
 	
-	void solutionPath(int x, int y) {
+	int[] solutionPath(int x, int y) {
 		int square = 0;
 		
 		boolean isValidSquare = false; // used to check if the square is proper for a solution pathway
@@ -117,26 +158,30 @@ public class TheMain {
 			// Corners are a more special case than side squares, since there are only two neighbouring squares.
 			
 			// I based this if statement off of previous code without cx,cy.
-			if(board[x+cx][y] == EMPTY){
+			if(board[x+cx][y] == PATH){
 				dx = x;
 				dy = y+cy;
-				if(board[x+cx][y+cy] == EMPTY && board[x+(2*cx)][y] == EMPTY){
+				if(board[x+cx][y+cy] == PATH && board[x+(2*cx)][y] == PATH){
 					isIndefinite = true;
+				} else {
+					isValidSquare = true;
 				}
-			} else if(board[x][y+cy] == EMPTY){
+			} else if(board[x][y+cy] == PATH){
 				dx = x+cx;
 				dy = y;
-				if(board[x+cx][y+cy] == EMPTY && board[x][y+(2*cy)] == EMPTY){
+				if(board[x+cx][y+cy] == PATH && board[x][y+(2*cy)] == PATH){
 					isIndefinite = true;
+				} else {
+					isValidSquare = true;
 				}
 			}
 			if(board[x+(2*cx)][y] == END || board[x][y+(2*cy)] == END) isFinished = true;
-		}else if(x == 0){ // sides start
+		}else if(x == 0 || y == 0 || x == GRID-1 || y == GRID-1){ // sides start
 			while(!isValidSquare && !isIndefinite){
-				square = (int)(Math.random()*3);
+				square = (int)(Math.random()*4);
 				if(square == 0){
 					usedSquares[square] = true;
-					if(board[x+cx][y+cy] == EMPTY){
+					if(board[x+cx][y+cy] == PATH){
 						continue;
 					} else {
 						dy = y+cy;
@@ -144,45 +189,70 @@ public class TheMain {
 					}
 				} else if(square == 1){
 					usedSquares[square] = true;
-					if(board[x][y+1] == EMPTY){
-						continue;
-					} else {
-						if(cx != 0){ // sides can only have one cx or cy value not equal to 0
+					if(cx != 0){
+						if(board[x][y+1] != PATH){
+							dx = x;	// sides can only have one cx or cy value not equal to 0
 							dy = y+1; // therefore check to make sure that the appropriate one is used for this case
-							dx = x;
-						}else if(cy !=0){
+						}else{
+							continue;
+						}
+					}else if(cy !=0){
+						if(board[x+1][y] != PATH){
 							dy = y;
 							dx = x+1;
+						}else{
+							continue;
 						}
 					}
 				} else if(square == 2){
 					usedSquares[square] = true;
-					if(board[x][y-1] == EMPTY){
-						continue;
-					} else {
-						if(cx != 0){
+					if(cx != 0){
+						if(board[x][y-1] != PATH){
 							dy = y-1;
 							dx = x;
-						}else if(cy !=0){
+						}else{
+							continue;
+						}
+					}else if(cy !=0){
+						if(board[x-1][y] != PATH){
 							dy = y;
 							dx = x-1;
+						}else{
+							continue;
 						}
 					}
 				}
-				if(dy == 0){
-					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
-							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
+				if( dy == 0 && dx == 0){
+					if( !( (board[dx+1][dy] == PATH && dx+1 != x) 
+							|| (board[dx][dy+1] == PATH && dy+1 != y) ) ){
 						isValidSquare = true;
 					}
-				}else if(dy == GRID-1){
-					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
+				}else if(dy == GRID-1 && dx == 0){
+					if( !( (board[dx+1][dy] == PATH && dx+1 != x) 
+							|| (board[dx][dy-1] == PATH && dy-1 != y) ) ){
 						isValidSquare = true;
 					}
-				}else{ //TODO start optimizing from here
-					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
+				}else if(dy == 0 && dx == GRID-1){
+					if( !( (board[dx-1][dy] == PATH && dx-1 != x) 
+							|| (board[dx][dy+1] == PATH && dy+1 != y) ) ){
 						isValidSquare = true;
+					}
+				}else if(dy == GRID-1 && dx == GRID-1){
+					if( !( (board[dx-1][dy] == PATH && dx-1 != x) 
+							|| (board[dx][dy-1] == PATH && dy-1 != y) ) ){
+						isValidSquare = true;
+					}
+				}else{
+					if(cx != 0){
+						if( !( (board[dx+cx][dy] == PATH && dx+1 != x) || (board[dx][dy+1] == PATH && dy+1 != y)
+								|| (board[dx][dy-1] == PATH && dy-1 != y) ) ){
+							isValidSquare = true;
+						}
+					} else if(cy != 0){
+						if( !( (board[dx-1][dy] == PATH && dx-1 != x) || (board[dx][dy+cy] == PATH && dy+1 != y)
+								|| (board[dx+1][dy] == PATH && dx+1 != x) ) ){
+							isValidSquare = true;
+						}
 					}
 				}
 				if(usedSquares[0] == true && usedSquares[1] == true && usedSquares[2] == true
@@ -190,180 +260,18 @@ public class TheMain {
 					isIndefinite = true;
 				}
 			}
-			if(dy == 0){
+			if(dy == 0 && dx ==  0){
 				if(board[x+1][dy] == END || board[dx][dy+1] == END) isFinished = true;
-			}else if(dy == GRID-1){
+			}else if(dy == GRID-1 && dx == 0){
 				if(board[x+1][dy] == END || board[dx][dy-1] == END) isFinished = true;
-			} else {
-				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
-			}
-		} else if(x == GRID-1){
-			while(!isValidSquare && !isIndefinite){
-				square = (int)(Math.random()*3);
-				if(square == 0){
-					usedSquares[square] = true;
-					if(board[x-1][y] == EMPTY){
-						continue;
-					} else {
-						dy = y;
-						dx = x-1;
-					}
-				} else if(square == 1){
-					usedSquares[square] = true;
-					if(board[x][y+1] == EMPTY){
-						continue;
-					} else {
-						dy = y+1;
-						dx = x;
-					}
-				} else if(square == 2){
-					usedSquares[square] = true;
-					if(board[x][y-1] == EMPTY){
-						continue;
-					} else {
-						dy = y-1;
-						dx = x;
-					}
-				}
-				if(dy == 0){
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
-							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else if(dy == GRID-1){
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else{
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						isValidSquare = true;
-					}
-				}	
-				if(usedSquares[0] == true && usedSquares[1] == true && usedSquares[2] == true
-						&& isValidSquare == false){
-					isIndefinite = true;
-				}
-			}
-			if(dy == 0){
+			}else if(dy == 0 && dx == GRID-1){
 				if(board[x-1][dy] == END || board[dx][dy+1] == END) isFinished = true;
-			}else if(dy == GRID-1){
+			}else if(dy == GRID-1 && dx == GRID-1){
 				if(board[x-1][dy] == END || board[dx][dy-1] == END) isFinished = true;
-			} else {
-				if(board[dx-1][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
-			}
-		} else if (y == 0){
-			while(!isValidSquare && !isIndefinite){
-				square = (int)(Math.random()*3);
-				if(square == 0){
-					usedSquares[square] = true;
-					if(board[x-1][y] == EMPTY){
-						continue;
-					} else {
-						dy = y;
-						dx = x-1;
-					}
-				} else if(square == 1){
-					usedSquares[square] = true;
-					if(board[x][y+1] == EMPTY){
-						continue;
-					} else {
-						dy = y+1;
-						dx = x;
-					}
-				} else if(square == 2){
-					usedSquares[square] = true;
-					if(board[x+1][y] == EMPTY){
-						continue;
-					} else {
-						dy = y;
-						dx = x+1;
-					}
-				}
-				if(dx == 0){
-					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
-							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else if(dx == GRID-1){
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
-							|| (board[dx][dy+1] == EMPTY && dy+1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else{
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-							|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-						isValidSquare = true;
-					}
-				}	
-				if(usedSquares[0] == true && usedSquares[1] == true && usedSquares[2] == true
-						&& isValidSquare == false){
-					isIndefinite = true;
-				}
-			}
-			if(dx == 0){
-				if(board[x+1][dy] == END || board[dx][dy+1] == END) isFinished = true;
-			}else if(dx == GRID-1){
-				if(board[x-1][dy] == END || board[dx][dy+1] == END) isFinished = true;
-			} else {
-				if(board[dx+1][dy] == END || board[dx][dy+1] == END || board[dx-1][dy] == END)isFinished = true;
-			}
-		} else if (y == GRID-1){
-			while(!isValidSquare && !isIndefinite){
-				square = (int)(Math.random()*3);
-				if(square == 0){
-					usedSquares[square] = true;
-					if(board[x-1][y] == EMPTY){
-						continue;
-					} else {
-						dy = y;
-						dx = x-1;
-					}
-				} else if(square == 1){
-					usedSquares[square] = true;
-					if(board[x][y-1] == EMPTY){
-						continue;
-					} else {
-						dy = y-1;
-						dx = x;
-					}
-				} else if(square == 2){
-					usedSquares[square] = true;
-					if(board[x+1][y] == EMPTY){
-						continue;
-					} else {
-						dy = y;
-						dx = x+1;
-					}
-				}
-				if(dx == 0){
-					if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) 
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else if(dx == GRID-1){
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) 
-							|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
-						isValidSquare = true;
-					}
-				}else{
-					if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy-1] == EMPTY && dy-1 != y)
-							|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
-						isValidSquare = true;
-					}
-				}	
-				if(usedSquares[0] == true && usedSquares[1] == true && usedSquares[2] == true
-						&& isValidSquare == false){
-					isIndefinite = true;
-				}
-			}
-			if(dx == 0){
-				if(board[x+1][dy] == END || board[dx][dy-1] == END) isFinished = true;
-			}else if(dx == GRID-1){
-				if(board[x-1][dy] == END || board[dx][dy-1] == END) isFinished = true;
-			} else {
-				if(board[dx+1][dy] == END || board[dx][dy-1] == END || board[dx-1][dy] == END)isFinished = true;
+			} else if(cx != 0){
+				if(board[dx+cx][dy] == END || board[dx][dy+1] == END || board[dx][dy-1] == END)isFinished = true;
+			} else if(cy != 0){
+				if(board[dx+1][dy] == END || board[dx-1][dy] == END || board[dx][dy+cy] == END)isFinished = true;
 			}
 		} else {
 			// loop a bunch until all conditions are met for a valid square (Not touching solution square and not a previous square)
@@ -374,7 +282,7 @@ public class TheMain {
 					// the subject square due to a change in dx or dy.
 					// the board values cannot be changed until the square is validated
 					usedSquares[square] = true;
-					if(board[x+1][y] == EMPTY){
+					if(board[x+1][y] == PATH){
 						continue;
 					} else {
 						dy = y;
@@ -382,7 +290,7 @@ public class TheMain {
 					}
 				} else if(square == 1){
 					usedSquares[square] = true;
-					if(board[x][y+1] == EMPTY){
+					if(board[x][y+1] == PATH){
 						continue;
 					} else {
 						dy = y+1;
@@ -390,7 +298,7 @@ public class TheMain {
 					}
 				} else if(square == 2){
 					usedSquares[square] = true;
-					if(board[x-1][y] == EMPTY){
+					if(board[x-1][y] == PATH){
 						continue;
 					} else {
 						dy = y;
@@ -398,7 +306,7 @@ public class TheMain {
 					}
 				} else if(square == 3){
 					usedSquares[square] = true;
-					if(board[x][y-1] == EMPTY){
+					if(board[x][y-1] == PATH){
 						continue;
 					} else {
 						dy = y-1;
@@ -410,28 +318,28 @@ public class TheMain {
 				// squares (up down left right squares, no diagonals) making sure none are already empty
 				// also makes sure that if a square is empty that that square is not the previous square
 			if(dx == 0){
-				if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-						|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
+				if( !( (board[dx+1][dy] == PATH && dx+1 != x) || (board[dx][dy+1] == PATH && dy+1 != y)
+						|| (board[dx][dy-1] == PATH && dy-1 != y) ) ){
 					isValidSquare = true;
 				}
 			}else if(dx == GRID-1){
-				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-						|| (board[dx][dy-1] == EMPTY && dy-1 != y) ) ){
+				if( !( (board[dx-1][dy] == PATH && dx-1 != x) || (board[dx][dy+1] == PATH && dy+1 != y)
+						|| (board[dx][dy-1] == PATH && dy-1 != y) ) ){
 					isValidSquare = true;
 				}
 			}else if(dy == 0){
-				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy+1] == EMPTY && dy+1 != y)
-						|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
+				if( !( (board[dx-1][dy] == PATH && dx-1 != x) || (board[dx][dy+1] == PATH && dy+1 != y)
+						|| (board[dx+1][dy] == PATH && dx+1 != x) ) ){
 					isValidSquare = true;
 				}
 			}else if(dy == GRID-1){
-				if( !( (board[dx-1][dy] == EMPTY && dx-1 != x) || (board[dx][dy-1] == EMPTY && dy-1 != y)
-						|| (board[dx+1][dy] == EMPTY && dx+1 != x) ) ){
+				if( !( (board[dx-1][dy] == PATH && dx-1 != x) || (board[dx][dy-1] == PATH && dy-1 != y)
+						|| (board[dx+1][dy] == PATH && dx+1 != x) ) ){
 					isValidSquare = true;
 				}
 			} else {
-				if( !( (board[dx+1][dy] == EMPTY && dx+1 != x) || (board[dx-1][dy] == EMPTY && dx-1 != x) 
-						|| (board[dx][dy+1] == EMPTY && dy+1 != y)|| (board[dx][dy-1] == EMPTY && dy-1 != y)
+				if( !( (board[dx+1][dy] == PATH && dx+1 != x) || (board[dx-1][dy] == PATH && dx-1 != x) 
+						|| (board[dx][dy+1] == PATH && dy+1 != y)|| (board[dx][dy-1] == PATH && dy-1 != y)
 						) ){
 					isValidSquare = true;
 				}
@@ -463,12 +371,20 @@ public class TheMain {
 			board[dx][dy] = PATH;
 		}
 		
+		int[] q = new int[3];
+		
+		q[0] = dx;
+		q[1] = dy;
+		
 		if(isFinished){
-			//dostuff
+			q[2] = 1; 
+			return q;
 		}else if (isIndefinite){
-			setupGame();
+			q[2] = -1;
+			return q;
 		} else {
-			solutionPath(dx, dy);
+			q[2] = 0;
+			return q;
 		}
 		
 	}
@@ -476,7 +392,6 @@ public class TheMain {
 	void setupWindowAndGUI(){
 		frame = new JFrame("3D Maze Brah");
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.setResizable(false);
 		
 		mazegr = new MazeGraphic();
 		mazegr.setPreferredSize(new Dimension(GRID*PIXPERSQ, GRID*PIXPERSQ));
