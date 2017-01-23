@@ -7,7 +7,7 @@ public class TheMain {
 	}
 	
 	public final static int GRID = 50; // GRID must be large
-	public final static int PIXPERSQ = 5; // dimension of PIXPERSQxPIXPERSQ of each box
+	public final static int PIXPERSQ = 12; // dimension of PIXPERSQxPIXPERSQ of each box
 	public final static int PATHSIZE = GRID*2;
 	
 	public final static int EMPTY = 0;
@@ -392,11 +392,14 @@ public class TheMain {
 	void setupWindowAndGUI(){
 		frame = new JFrame("3D Maze Brah");
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+		frame.setResizable(false);
 		
 		mazegr = new MazeGraphic();
 		mazegr.setPreferredSize(new Dimension(GRID*PIXPERSQ, GRID*PIXPERSQ));
 		
-		frame.add(mazegr);
+		frame.setContentPane(mazegr);
+		
+	//	frame.add(mazegr);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
