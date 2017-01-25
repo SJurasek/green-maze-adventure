@@ -1,3 +1,4 @@
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -163,30 +164,65 @@ public class TheMain implements KeyListener{
 		boolean isFakePathDone = false;
 		// generates all fake paths
 		while(!isMazeyEnough()){
-			// makes sure fakex and fakey arent on the border because im too lazy to actuall fix that
-			// TODO maybe actually do borders
-			fakex = (int)(Math.random()*GRID);
-			fakey = (int)(Math.random()*GRID);
-			while((fakex == 0 || fakex == GRID-1 || fakey == 0 || fakey == GRID-1) && board[fakex][fakey] != SOLID){
-				fakex = (int)(Math.random()*GRID);
-				fakey = (int)(Math.random()*GRID);
+			isFakePathDone = false;
+		//for(int w=0; w<10; w++){
+			// makes sure initial fakex and fakey arent on the border or beside a square
+			// TODO maybe actually do borders (border squares)
+			fakex = (int)(Math.random()* (GRID-2) )+1;
+			fakey = (int)(Math.random()* (GRID-2) )+1;
+			while((board[fakex][fakey] != SOLID || board[fakex+1][fakey] != SOLID || board[fakex-1][fakey] != SOLID
+					|| board[fakex][fakey+1] != SOLID || board[fakex][fakey-1] != SOLID)){
+				fakex = (int)(Math.random()* (GRID-2) )+1;
+				fakey = (int)(Math.random()* (GRID-2) )+1;
 			}
 			
 			board[fakex][fakey] = TEMP;
+			int number = 0;
 			// generate a single fake path
 			while(!isFakePathDone){
 				isFakePathDone = false;
 				myArray = generatePath(fakex, fakey, false);
 				if(myArray[2] == SIT_FINISH){
-					isFakePathDone = true;
+					number = 0;
+					for(int i=0; i<GRID; i++){
+						for(int j=0; j<GRID; j++){
+							if(board[i][j] == TEMP) number++;
+						}
+					}
+					if(number >= 2){
+						isFakePathDone = true;
+					}else {
+						for(int i=0; i<GRID; i++){
+							for(int j=0; j<GRID; j++){
+								if(board[i][j] == TEMP) board[i][j] = SOLID;
+							}
+						}
+						fakex = (int)(Math.random()* (GRID-2) )+1;
+						fakey = (int)(Math.random()* (GRID-2) )+1;
+						while((board[fakex][fakey] != SOLID || board[fakex+1][fakey] != SOLID || board[fakex-1][fakey] != SOLID
+								|| board[fakex][fakey+1] != SOLID || board[fakex][fakey-1] != SOLID)){
+							fakex = (int)(Math.random()* (GRID-2) )+1;
+							fakey = (int)(Math.random()* (GRID-2) )+1;
+						}
+						
+						board[fakex][fakey] = TEMP;
+					}
+					
 				} else if(myArray[2] == SIT_INDEF){
 					for(int i=0; i<GRID; i++){
 						for(int j=0; j<GRID; j++){
 							if(board[i][j] == TEMP) board[i][j] = SOLID;
 						}
 					}
-					isFakePathDone = true; // sets boolean to true since fake path is gone
-					// and does not affect isMazeyEnough();
+					fakex = (int)(Math.random()* (GRID-2) )+1;
+					fakey = (int)(Math.random()* (GRID-2) )+1;
+					while((board[fakex][fakey] != SOLID || board[fakex+1][fakey] != SOLID || board[fakex-1][fakey] != SOLID
+							|| board[fakex][fakey+1] != SOLID || board[fakex][fakey-1] != SOLID)){
+						fakex = (int)(Math.random()* (GRID-2) )+1;
+						fakey = (int)(Math.random()* (GRID-2) )+1;
+					}
+					
+					board[fakex][fakey] = TEMP;
 				} else if(myArray[2] == SIT_NEUTRAL){
 					fakex = myArray[0];
 					fakey = myArray[1];
@@ -205,15 +241,15 @@ public class TheMain implements KeyListener{
 	}
 	
 	boolean isMazeyEnough(){
-		int numOfEmpty = 0;
+		double numOfEmpty = 0;
 		
 		for(int i=0; i<GRID; i++){
 			for(int j=0; j<GRID; j++){
-				if(board[i][j] == EMPTY) numOfEmpty++;
+				if(board[i][j] == EMPTY || board[i][j] == PATH || board[i][j] == TEMP) numOfEmpty++;
 			}
 		}
 		
-		if(numOfEmpty / (GRID*GRID) >= 0.30){
+		if(numOfEmpty / (GRID*GRID) >= 0.40){
 			return true;
 		}else {
 			return false;
@@ -228,14 +264,16 @@ public class TheMain implements KeyListener{
 		
 		final int pathway;
 		
-		final int goal;
+		int goal[] = new int[2]; // do not change initial values of goal
 		
 		if(isSolutionPath){
 			pathway = PATH;
-			goal = END;
+			goal[0] = END;
+			goal[1] = END;
 		} else {
 			pathway = TEMP;
-			goal = EMPTY;
+			goal[0] = PATH;
+			goal[1] = EMPTY;
 		}
 		
 		int square = 0;
@@ -294,7 +332,8 @@ public class TheMain implements KeyListener{
 					isValidSquare = true;
 				}
 			}
-			if(board[x+(2*cx)][y] == goal || board[x][y+(2*cy)] == goal) isFinished = true;
+			if(board[x+(2*cx)][y] == goal[0] || board[x][y+(2*cy)] == goal[0]
+					|| board[x+(2*cx)][y] == goal[1] || board[x][y+(2*cy)] == goal[1]) isFinished = true;
 		}else if(x == 0 || y == 0 || x == GRID-1 || y == GRID-1){ // sides start
 			while(!isValidSquare && !isIndefinite){
 				square = (int)(Math.random()*4);
@@ -380,24 +419,30 @@ public class TheMain implements KeyListener{
 				}
 			}
 			if(dy == 0 && dx ==  0){
-				if(board[x+1][dy] == goal || board[dx][dy+1] == goal) isFinished = true;
+				if(board[x+1][dy] == goal[0] || board[dx][dy+1] == goal[0]
+						|| board[x+1][dy] == goal[1] || board[dx][dy+1] == goal[1]) isFinished = true;
 			}else if(dy == GRID-1 && dx == 0){
-				if(board[x+1][dy] == goal || board[dx][dy-1] == goal) isFinished = true;
+				if(board[x+1][dy] == goal[0] || board[dx][dy-1] == goal[0]
+						|| board[x+1][dy] == goal[1] || board[dx][dy-1] == goal[1]) isFinished = true;
 			}else if(dy == 0 && dx == GRID-1){
-				if(board[x-1][dy] == goal || board[dx][dy+1] == goal) isFinished = true;
+				if(board[x-1][dy] == goal[0] || board[dx][dy+1] == goal[0]
+						|| board[x-1][dy] == goal[1] || board[dx][dy+1] == goal[1]) isFinished = true;
 			}else if(dy == GRID-1 && dx == GRID-1){
-				if(board[x-1][dy] == goal || board[dx][dy-1] == goal) isFinished = true;
+				if(board[x-1][dy] == goal[0] || board[dx][dy-1] == goal[0] 
+						 || board[x-1][dy] == goal[1] || board[dx][dy-1] == goal[1]) isFinished = true;
 			} else if(cx != 0){
-				if(board[dx+cx][dy] == goal || board[dx][dy+1] == goal || board[dx][dy-1] == goal)isFinished = true;
+				if(board[dx+cx][dy] == goal[0] || board[dx][dy+1] == goal[0] || board[dx][dy-1] == goal[0]
+						|| board[dx+cx][dy] == goal[1] || board[dx][dy+1] == goal[1] || board[dx][dy-1] == goal[1])isFinished = true;
 			} else if(cy != 0){
-				if(board[dx+1][dy] == goal || board[dx-1][dy] == goal || board[dx][dy+cy] == goal)isFinished = true;
+				if(board[dx+1][dy] == goal[0] || board[dx-1][dy] == goal[0] || board[dx][dy+cy] == goal[0]
+						|| board[dx+1][dy] == goal[1] || board[dx-1][dy] == goal[1] || board[dx][dy+cy] == goal[1])isFinished = true;
 			}
 		} else {
 			// loop a bunch until all conditions are met for a valid square (Not touching solution square and not a previous square)
 			while(!isValidSquare && !isIndefinite){
 				square = (int)(Math.random()*4);
 				if(square == 0){
-					// depgoaling on the outcome of square, the destination square will be up down left or right of
+					// depending on the outcome of square, the destination square will be up down left or right of
 					// the subject square due to a change in dx or dy.
 					// the board values cannot be changed until the square is validated
 					usedSquares[square] = true;
@@ -473,16 +518,21 @@ public class TheMain implements KeyListener{
 			// checks to see if the pathway has reach the goal, else it goes through the method to produce another
 			// valid square. Unless it isIndefinite, then it restarts maze generation
 			if(dx == 0){
-				if(board[dx+1][dy] == goal || board[dx][dy+1] == goal || board[dx][dy-1] == goal)isFinished = true;
+				if(board[dx+1][dy] == goal[0] || board[dx][dy+1] == goal[0] || board[dx][dy-1] == goal[0]
+						|| board[dx+1][dy] == goal[1] || board[dx][dy+1] == goal[1] || board[dx][dy-1] == goal[1])isFinished = true;
 			}else if(dx == GRID-1){
-				if(board[dx-1][dy] == goal || board[dx][dy+1] == goal || board[dx][dy-1] == goal)isFinished = true;
+				if(board[dx-1][dy] == goal[0] || board[dx][dy+1] == goal[0] || board[dx][dy-1] == goal[0]
+						|| board[dx-1][dy] == goal[1] || board[dx][dy+1] == goal[1] || board[dx][dy-1] == goal[1])isFinished = true;
 			}else if(dy == 0){
-				if(board[dx+1][dy] == goal || board[dx-1][dy] == goal || board[dx][dy+1] == goal)isFinished = true;
+				if(board[dx+1][dy] == goal[0] || board[dx-1][dy] == goal[0] || board[dx][dy+1] == goal[0]
+						|| board[dx+1][dy] == goal[1] || board[dx-1][dy] == goal[1] || board[dx][dy+1] == goal[1])isFinished = true;
 			}else if(dy == GRID-1){
-				if(board[dx+1][dy] == goal || board[dx-1][dy] == goal || board[dx][dy-1] == goal)isFinished = true;
+				if(board[dx+1][dy] == goal[0] || board[dx-1][dy] == goal[0] || board[dx][dy-1] == goal[0]
+						|| board[dx+1][dy] == goal[1] || board[dx-1][dy] == goal[1] || board[dx][dy-1] == goal[1])isFinished = true;
 			} else {
-				if(board[dx+1][dy] == goal || board[dx-1][dy] == goal 
-					|| board[dx][dy+1] == goal || board[dx][dy-1] == goal)isFinished = true;
+				if(board[dx+1][dy] == goal[0] || board[dx-1][dy] == goal[0] || board[dx][dy+1] == goal[0] 
+						|| board[dx][dy-1] == goal[0] || board[dx+1][dy] == goal[1] || board[dx-1][dy] == goal[1]
+								|| board[dx][dy+1] == goal[1] || board[dx][dy-1] == goal[1])isFinished = true;
 			}
 		}
 		// TODO optimize code so that I can adjust board values down here, and also less code
