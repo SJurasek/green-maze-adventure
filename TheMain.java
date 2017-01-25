@@ -1,3 +1,6 @@
+/* 2D Maze Game made for 4U Programming ISP
+ * Scott Jurasek
+ */
 
 import java.awt.*;
 import java.awt.event.*;
@@ -26,22 +29,30 @@ public class TheMain implements KeyListener{
 	private final static int SIT_FINISH = 1;
 	private final static int SIT_NEUTRAL = 0;
 	
+	public static boolean isGameOver = false;
 	public static int[][] board = new int[GRID][GRID];
 	static int startx, starty, endx, endy;
 	static Person person;
 	
+	int runtime = 0;
 	Timer timer;
 	ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
 	JFrame frame;
 	MazeGraphic mazegr = new MazeGraphic();
+	JLabel timeLabel;
 	
 	TheMain(){
-		setupGame();
-		setupWindowAndGUI();
-		mazegr.repaint();
-		
-		runGame();
+			setupGame();
+			setupWindowAndGUI();
+			mazegr.repaint();
+			runGame();
 	}
+	
+	int milliseconds = 0;
+	int seconds = 0;
+	int minutes = 0;
+	
+	int timeLabelOpacity = 200;
 	
 	void runGame(){
 		timer = new Timer(100, new ActionListener(){
@@ -56,13 +67,62 @@ public class TheMain implements KeyListener{
             			person.move(Person.LEFT);
             		} else if(pressedKeys.get(0) == KeyEvent.VK_RIGHT || pressedKeys.get(0) == KeyEvent.VK_D){
             			person.move(Person.RIGHT);
+            		} else if(pressedKeys.get(0) == KeyEvent.VK_ENTER || pressedKeys.get(0) == KeyEvent.VK_T){
+            			timeLabelOpacity = 200;
             		}
             		mazegr.repaint();
                 } 
+                runtime += 100;
+                // example: 756100 ms
+                // minutes :  seconds : milliseconds
+                // 12 : 36 : 100
+                milliseconds = runtime % 1000;
+                seconds =  ((runtime-milliseconds) % (60*1000)) * (1/1000)/*conversion*/;
+                // multiply runtime minus previous values, find the remainder when dividing by a
+                // larger increment so to get a good clock display, which gives millisecs, then
+                // convert the ms value to the proper time value (sec or min or whatever)
+                minutes = ((runtime-milliseconds-(seconds*1000)) * (1/1000) * (1/60);
+                // for minutes, modulo not needed because it is the maximum increment
+                //runtime is in milliseconds
+                
+                timeLabel.setText(minutes + ":" + seconds + "." + milliseconds);
+                if(timeLabelOpacity > 133){
+                	timeLabel.setForegroundColor(new Color(255,255,255,239));
+                	timeLabel.setBackgroundColor(new Color(0,0,0,133));
+                } else {
+                	timeLabel.setForegroundColor(new Color(255,255,255, (int)(timeLabelOpacity*1.8));
+                	timeLabel.setBackgroundColor(new Color(0,0,0, timeLabelOpacity));
+                }
+                if(timeLabelOpacity > 9){
+                	timeLabelOpacity -= 10;
+                }
+                
             }
         });
-		
+		if(minutes == 420){
+			System.out.println("blazeit");
+		}
 		timer.start();
+		while(true){
+			// This finishing if statement does not work if there is no delay in the loop
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if(person.x == endx && person.y == endy){
+				for(int i=0; i<GRID; i++){
+					for(int j=0; j<GRID; j++){
+						board[i][j] = EMPTY;
+					}
+				}
+				mazegr.setBackground(Color.RED);
+				isGameOver = true;
+				break;
+				
+			}
+		}
+		mazegr.repaint();
 	}
 	
 	void setupGame(){
@@ -78,7 +138,7 @@ public class TheMain implements KeyListener{
 	void resetBoard(){
 		for(int i=0; i<GRID; i++){
 			for(int j=0; j<GRID; j++){
-				board[i][j] = 1;
+				board[i][j] = SOLID;
 			}
 		}
 	}
@@ -249,7 +309,7 @@ public class TheMain implements KeyListener{
 			}
 		}
 		
-		if(numOfEmpty / (GRID*GRID) >= 0.40){
+		if(numOfEmpty / (GRID*GRID) >= 0.48){
 			return true;
 		}else {
 			return false;
@@ -583,6 +643,13 @@ public class TheMain implements KeyListener{
 		
 		mazegr = new MazeGraphic();
 		mazegr.setPreferredSize(new Dimension(GRID*PIXPERSQ, GRID*PIXPERSQ));
+		
+		timeLabel = new JLabel("muhtime");
+		timeLabel.setFont(new Font("sansserif", Font.BOLD, 20));
+		timeLabel.setBackgroundColor(new Color(80,80,80,133));
+		timeLabel.setForegroundColor(Color.WHITE);
+		timeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		timeLabel.setVerticalAlignment(SwingConstants.TOP);
 		
 		frame.add(mazegr);
 		mazegr.addKeyListener(this);
