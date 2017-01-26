@@ -80,46 +80,16 @@ public class MazeGraphic extends JPanel{
 			g2.setColor(Color.WHITE);
 			g2.drawString("Record Time: ", jpanW/2-125, jpanH/2+50);
 			
-			BufferedReader br = null;
-			BufferedWriter bw = null;
-			try {
-				br = new BufferedReader(new FileReader(new File("highscores.txt")));
-				bw = new BufferedWriter(new FileWriter(new File("highscores.txt")));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			String hsstring = "";
-			try {
-				hsstring = br.readLine();
-				
-				long highscore = 0L;
-				try{
-					highscore = Long.parseLong(hsstring);
-				} catch(NumberFormatException e){
-					highscore = TheMain.runtime+1;
-				}
-				
-				if(TheMain.runtime < highscore){ // a record time is lower than the previous record time
-					 bw.write(TheMain.runtime + "");
-					 g2.setColor(Color.DARK_GRAY);
-					 g2.drawString(TheMain.convertTimeToString(TheMain.runtime), jpanW/2+50, jpanH/2+50);
-					 
-					 g2.setColor(Color.RED);
-					 g2.setFont(new Font("sansserif", Font.BOLD, 50));
-					 g2.drawString("NEW HIGH SCORE!", jpanW/2-220, jpanH/2+220);
-				} else {
-					g2.setColor(Color.DARK_GRAY);
-					g2.drawString(TheMain.convertTimeToString(highscore), jpanW/2+50, jpanH/2);
-				}
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			try{
-				br.close();
-				bw.close();
-			} catch (IOException e){
-				e.printStackTrace();
+			if(TheMain.isNewHighScore){
+				g2.setColor(Color.DARK_GRAY);
+				g2.drawString(TheMain.convertTimeToString(TheMain.runtime), jpanW/2+50, jpanH/2+50);
+				 
+				g2.setColor(Color.RED);
+				g2.setFont(new Font("sansserif", Font.BOLD, 50));
+				g2.drawString("NEW HIGH SCORE!", jpanW/2-220, jpanH/2+220);
+			} else {
+				g2.setColor(Color.DARK_GRAY);
+				g2.drawString(TheMain.convertTimeToString(TheMain.highscore), jpanW/2+50, jpanH/2+50);
 			}
 		}
 	}
