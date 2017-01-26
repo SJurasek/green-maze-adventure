@@ -4,6 +4,13 @@
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import javax.swing.*;
 import java.util.ArrayList;
 
@@ -29,11 +36,13 @@ public class TheMain implements KeyListener{
 	private final static int SIT_FINISH = 1;
 	private final static int SIT_NEUTRAL = 0;
 	
+	public static boolean isNewHighScore = false;
 	public static boolean isGameOver = false;
 	public static int[][] board = new int[GRID][GRID];
 	private static int startx, starty, endx, endy;
 	public static Person person;
-	public static long runtime = 0;
+	public static int highscore = 0;
+	public static int runtime = 0;
 	
 	Timer keyTimer;
 	ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
@@ -48,14 +57,10 @@ public class TheMain implements KeyListener{
 			runGame();
 	}
 	
-	long milliseconds = 0;
-	long seconds = 0;
-	long minutes = 0;
-	
-	static String convertTimeToString(long time){
-		long milliseconds = 0;
-		long seconds = 0;
-		long minutes = 0;
+	static String convertTimeToString(int time){
+		int milliseconds = 0;
+		int seconds = 0;
+		int minutes = 0;
 		
         milliseconds = (time % 1000)/100;
         seconds =  ((time-(milliseconds*100))%(60*1000))/1000; // conversion - dont use "fractions" or will cast to zero immediately
@@ -68,6 +73,41 @@ public class TheMain implements KeyListener{
         
         return String.format("%02d:%02d.%d", minutes, seconds, milliseconds);
 		
+	}
+	
+	void scoring(){
+		BufferedReader br = null;
+		BufferedWriter bw = null;
+		try {
+			br = new BufferedReader(new FileReader(new File("highscores.txt")));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String hsstring = "";
+		try {
+			hsstring = br.readLine();
+			
+			System.out.println(hsstring);
+			
+			highscore = 0;
+			try{
+				highscore = Integer.parseInt(hsstring);
+			} catch(NumberFormatException e){
+				e.printStackTrace();
+			}
+			
+			br.close();
+			
+			if(runtime < highscore){ // a record time is lower than the previous record time
+				 bw = new BufferedWriter(new FileWriter(new File("highscores.txt")));
+				 bw.append(TheMain.runtime + "");
+				 bw.close();
+				 isNewHighScore = true;
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	void runGame(){
@@ -89,7 +129,7 @@ public class TheMain implements KeyListener{
             		}
                 }
                 
-                runtime = (System.currentTimeMillis() - initialTime);
+                runtime = (int)(System.currentTimeMillis() - initialTime);
                 
                 if(initialTime > System.currentTimeMillis()) System.exit(0);// make sure time isnt behind initial time
                 
@@ -100,10 +140,6 @@ public class TheMain implements KeyListener{
         };
 		
 		keyTimer = new Timer(100, actListKey);
-		
-		if(minutes == 420){
-			System.out.println("blazeit");
-		}
 		keyTimer.start();
 		while(!isGameOver){
 			// This finishing if statement does not work if there is no delay in the loop
@@ -114,15 +150,10 @@ public class TheMain implements KeyListener{
 			}
 			if(person.x == endx && person.y == endy){
 				keyTimer.stop();
-				for(int i=0; i<GRID; i++){
-					for(int j=0; j<GRID; j++){
-						board[i][j] = EMPTY;
-					}
-				}
-				mazegr.setBackground(Color.RED);
 				isGameOver = true;
 			}
 		}
+		scoring();
 		mazegr.repaint();
 	}
 	
@@ -149,30 +180,23 @@ public class TheMain implements KeyListener{
 		startx = (int)(Math.random()*GRID);
 		starty = (int)(Math.random()*GRID);
 		// make sure the start point is not on the border because it could cause annoying situations
-		while(startx == 0 || startx == GRID-1 || starty == 0 || starty == GRID-1){
-			startx = (int)(Math.random()*GRID);
-			starty = (int)(Math.random()*GRID);
-		}
+//		while(startx == 0 || startx == GRID-1 || starty == 0 || starty == GRID-1){
+//			startx = (int)(Math.random()*GRID);
+//			starty = (int)(Math.random()*GRID);
+//		}
 		// set start point to empty because it conflicts with how path is made.
 		// set to START after solutionPath() completes
 		board[startx][starty] = PATH;
 		
 		//determines which border the exit will be on.
-		int rdmSide = (int)(Math.random()*4);
+//		int rdmSide = (int)(Math.random()*4);
 		
 		// determines the location of the end square
 		endx = (int)(Math.random()*GRID);
 		endy = (int)(Math.random()*GRID);
-		if(rdmSide == 0){
-			endy = 0;
-		//	endx stays the same
-		} else if(rdmSide == 1){
-			endx = 0;
-//			endy stays the same
-		} else if(rdmSide == 2){
-			endy = GRID-1;
-		} else if(rdmSide == 3){
-			endx = GRID-1;
+		while(endx == startx && endy == starty){
+			endx = (int)(Math.random()*GRID);
+			endy = (int)(Math.random()*GRID);
 		}
 		// set end tile to END value
 		board[endx][endy] = END;
