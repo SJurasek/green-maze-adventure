@@ -1,3 +1,5 @@
+package main;
+
 import java.awt.*;
 import javax.swing.*;
 import java.io.*;
@@ -46,12 +48,16 @@ public class MazeGraphic extends JPanel{
 						g2.setColor(new Color(65,164,65));
 						g2.fillRect(blockX*i,blockY*j, blockX, blockY);
 					} else if(TheMain.board[i][j] == TheMain.START){
-						g2.setColor(new Color(60,140,245));
+						g2.setColor(new Color(255,100,100));
 						g2.fillRect(blockX*i,blockY*j, blockX, blockY);
 					} else if(TheMain.board[i][j] == TheMain.END){
 						g2.setColor(new Color(130,180,255));
 						g2.fillRect(blockX*i,blockY*j, blockX, blockY);
-					}
+					} 
+//					else if(TheMain.board[i][j] == TheMain.PATH){
+//						g2.setColor(Color.BLUE);
+//						g2.fillRect(blockX*i,blockY*j, blockX, blockY);
+//					}
 					
 					if(dist > 3.5 && dist <= 4.5){
 						g2.setColor(new Color(0,0,0,120));
@@ -67,29 +73,43 @@ public class MazeGraphic extends JPanel{
 			g2.drawOval(x * blockX + num, y * blockY + num, TheMain.person.width, TheMain.person.width);
 		} else {
 			this.setBackground(new Color(65,164,65));
-			g2.setColor(Color.WHITE);
-			g2.setFont(new Font("sansserif", Font.BOLD, 50));
-			g2.drawString("YOU FINISHED", jpanW/2-170, jpanH/2-100);
 			
-			g2.setFont(new Font("sansserif", Font.BOLD, 25));
-			g2.drawString("Your Time: ", jpanW/2-125, jpanH/2);
+			int strokeSize = 10;
+			int diff = strokeSize/2;
+			
+			g2.setStroke(new BasicStroke(strokeSize));
+			g2.setColor(Color.BLACK);
+			
+			int numOfLayers = 10;
+			for(int i=0; i<=numOfLayers; i++){
+				g2.setColor(new Color(0,0,0,255-( (255/numOfLayers) *i)));
+				g2.drawRect((strokeSize*i), (strokeSize*i), jpanW-(strokeSize*(i*2)), jpanH-(strokeSize*(i*2)));
+			}
 			
 			g2.setColor(Color.DARK_GRAY);
-			g2.drawString(TheMain.convertTimeToString(TheMain.runtime), jpanW/2+50, jpanH/2);
+			g2.setFont(new Font("Courier New", Font.BOLD, 24));
+			
+			int alignLeft = jpanW/2-170;
+			int alignRight = jpanH/2+90;
+			g2.drawString("user == finished", alignLeft, jpanH/2-140);
+			g2.drawString("================", alignLeft, jpanH/2-110);
 			
 			g2.setColor(Color.WHITE);
-			g2.drawString("Record Time: ", jpanW/2-125, jpanH/2+50);
+			g2.drawString("user_time   :", alignLeft, jpanH/2-50);
+			
+			g2.setColor(Color.DARK_GRAY);
+			g2.drawString(TheMain.convertTimeToString(TheMain.runtime), alignRight, jpanH/2-50);
+			
+			g2.setColor(Color.WHITE);
+			g2.drawString("record_time :", alignLeft, jpanH/2+10);
+			
+			g2.setColor(Color.DARK_GRAY);
+			g2.drawString(TheMain.convertTimeToString(TheMain.highscore), alignRight, jpanH/2+10);
 			
 			if(TheMain.isNewHighScore){
-				g2.setColor(Color.DARK_GRAY);
-				g2.drawString(TheMain.convertTimeToString(TheMain.runtime), jpanW/2+50, jpanH/2+50);
-				 
-				g2.setColor(Color.RED);
-				g2.setFont(new Font("sansserif", Font.BOLD, 50));
-				g2.drawString("NEW HIGH SCORE!", jpanW/2-220, jpanH/2+220);
-			} else {
-				g2.setColor(Color.DARK_GRAY);
-				g2.drawString(TheMain.convertTimeToString(TheMain.highscore), jpanW/2+50, jpanH/2+50);
+				g2.setColor(new Color(184,21,0));
+				g2.drawString("new_high_score !", alignLeft, jpanH/2+70);
+				g2.drawString("================", alignLeft, jpanH/2+100);
 			}
 		}
 	}
