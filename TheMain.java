@@ -1,15 +1,10 @@
 /* 2D Maze Game made for 4U Programming ISP
  * Scott Jurasek
+ * TODO add a repetitive loop - give option to play again at end, and make a start screen
  */
-
 import java.awt.*;
 import java.awt.event.*;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -37,6 +32,7 @@ public class TheMain implements KeyListener{
 	private final static int SIT_NEUTRAL = 0;
 	
 	public static boolean isNewHighScore = false;
+	public static boolean isFlashDone = false;
 	public static boolean isGameOver = false;
 	public static int[][] board = new int[GRID][GRID];
 	private static int startx, starty, endx, endy;
@@ -87,8 +83,6 @@ public class TheMain implements KeyListener{
 		try {
 			hsstring = br.readLine();
 			
-			System.out.println(hsstring);
-			
 			highscore = 0;
 			try{
 				highscore = Integer.parseInt(hsstring);
@@ -102,6 +96,7 @@ public class TheMain implements KeyListener{
 				 bw = new BufferedWriter(new FileWriter(new File("highscores.txt")));
 				 bw.append(TheMain.runtime + "");
 				 bw.close();
+				 highscore = runtime;
 				 isNewHighScore = true;
 			}
 			
@@ -141,7 +136,7 @@ public class TheMain implements KeyListener{
 		
 		keyTimer = new Timer(100, actListKey);
 		keyTimer.start();
-		while(!isGameOver){
+		do{
 			// This finishing if statement does not work if there is no delay in the loop
 			try {
 				Thread.sleep(10);
@@ -149,10 +144,14 @@ public class TheMain implements KeyListener{
 				e.printStackTrace();
 			}
 			if(person.x == endx && person.y == endy){
-				keyTimer.stop();
 				isGameOver = true;
 			}
-		}
+			if(isGameOver){
+				keyTimer.stop();
+				timeLabel.setForeground(new Color(0,0,0,0));
+				timeLabel.setOpaque(false);
+			}
+		} while(!isGameOver);
 		scoring();
 		mazegr.repaint();
 	}
@@ -670,7 +669,7 @@ public class TheMain implements KeyListener{
 		mazegr.setPreferredSize(new Dimension(GRID*PIXPERSQ, GRID*PIXPERSQ));
 		
 		timeLabel = new JLabel("00:00.0");
-		timeLabel.setFont(new Font("sansserif", Font.BOLD, 20));
+		timeLabel.setFont(new Font("Courier New", Font.BOLD, 20));
 		timeLabel.setOpaque(true);
 		timeLabel.setBackground(new Color(0,0,0,50));
 		timeLabel.setForeground(new Color(255,255,255,200));
